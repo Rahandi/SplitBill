@@ -1,3 +1,6 @@
+import mysql.connector
+
+
 class Database:
   _instance = None
 
@@ -5,7 +8,7 @@ class Database:
     if cls._instance is None:
       cls._instance = super().__new__(cls)
       cls._instance.db = mysql.connector.connect(
-        host="db",
+        host="0.0.0.0",
         user="splitbill",
         password="splitbill",
         database="splitbill"
