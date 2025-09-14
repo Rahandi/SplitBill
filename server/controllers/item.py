@@ -1,5 +1,6 @@
 from database.tables import ItemsTable, PersonsTable
 
+
 class ItemController:
   def get_item(self, item_id):
     item_object = {}
@@ -15,6 +16,7 @@ class ItemController:
     return item_object
 
   def add_participant(self, item_id, participant_name):
+    participant_name = participant_name.lower()
     item = ItemsTable().get_by_id(item_id)
     if not item:
       return None
@@ -28,6 +30,7 @@ class ItemController:
     return self.get_item(item_id)
 
   def remove_participant(self, item_id, participant_name):
+    participant_name = participant_name.lower()
     item = ItemsTable().get_by_id(item_id)
     if not item:
       return None
