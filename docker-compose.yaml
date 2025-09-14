@@ -1,0 +1,35 @@
+services:
+  db:
+    image: mysql:9.4
+    container_name: splitbill-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=splitbill
+      - MYSQL_USER=splitbill
+      - MYSQL_PASSWORD=splitbill
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database:/var/lib/mysql
+
+  # server:
+  #   build: ./server
+  #   container_name: splitbill-server
+  #   restart: unless-stopped
+  #   environment:
+  #     - FLASK_ENV=development
+  #   ports:
+  #     - "5000:5000"
+  #   depends_on:
+  #     - db
+  
+  # discord:
+  #   build: ./discord
+  #   container_name: splitbill-discord
+  #   restart: unless-stopped
+  #   environment:
+  #     - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+  #   depends_on:
+  #     - server
+  
