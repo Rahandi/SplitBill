@@ -30,7 +30,10 @@ def bill_submit():
 
 @app.route('/bill/<bill_id>', methods=['GET'])
 def get_bill(bill_id):
-  return bill_controller.get_bill(bill_id)
+  result = bill_controller.get_bill(bill_id)
+  if not result:
+    return __error("Bill not found", 404)
+  return __success(result)
 
 @app.route('/bill/<bill_id>/calculate', methods=['GET'])
 def calculate_bill(bill_id):

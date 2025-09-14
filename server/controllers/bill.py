@@ -32,7 +32,7 @@ class BillController:
     bill_name = data['name']
     items = data['items']
     total = data['total']
-    payer_name = payer_name.lower()
+    payer_name = data['payer_name'].lower()
 
     payer = PersonsTable().get_by_name_or_create(payer_name)
     bill = BillsTable().create(bill_name, total, payer.id)

@@ -25,12 +25,12 @@ services:
     depends_on:
       - db
   
-  # discord:
-  #   build: ./discord
-  #   container_name: splitbill-discord
-  #   restart: unless-stopped
-  #   environment:
-  #     - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-  #   depends_on:
-  #     - server
+  discord:
+    build: ./discord
+    container_name: splitbill-discord
+    restart: unless-stopped
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+    depends_on:
+      - server
   
