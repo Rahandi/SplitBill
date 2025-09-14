@@ -13,16 +13,17 @@ services:
     volumes:
       - ./database:/var/lib/mysql
 
-  # server:
-  #   build: ./server
-  #   container_name: splitbill-server
-  #   restart: unless-stopped
-  #   environment:
-  #     - FLASK_ENV=development
-  #   ports:
-  #     - "5000:5000"
-  #   depends_on:
-  #     - db
+  server:
+    build: ./server
+    container_name: splitbill-server
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=development
+      - DB_HOST=db
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
   
   # discord:
   #   build: ./discord
