@@ -1,0 +1,13 @@
+{
+  "name": "splitbill-e2e",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test tests/api.spec.js",
+    "test:ui": "playwright test tests/ui.spec.js",
+    "install:browsers": "playwright install chromium --with-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  }
+}
