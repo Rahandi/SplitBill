@@ -42,6 +42,7 @@ export default function GroupDashboard() {
   const [debts, setDebts] = useState([])
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [groupNotFound, setGroupNotFound] = useState(false)
   const [settling, setSettling] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -99,6 +100,8 @@ export default function GroupDashboard() {
     } catch (err) {
       if (err.message === 'Invalid passcode' || err.message?.includes('403')) {
         setNeedsPasscode(true)
+      } else if (err.message === 'Group not found') {
+        setGroupNotFound(true)
       }
     } finally {
       setLoading(false)
@@ -168,11 +171,20 @@ export default function GroupDashboard() {
     setSettling(false)
   }
 
+  function removeFromRecent(groupCode) {
+    try {
+      const key = 'recent_groups'
+      const existing = JSON.parse(localStorage.getItem(key) || '[]')
+      localStorage.setItem(key, JSON.stringify(existing.filter(r => r.code !== groupCode)))
+    } catch {}
+  }
+
   async function handleDeleteGroup() {
     if (!window.confirm(`Delete group "${group?.name}"? This will delete all bills and cannot be undone.`)) return
     setDeleting(true)
     try {
       await deleteGroup(code, passcode())
+      removeFromRecent(code)
       navigate('/')
     } finally {
       setDeleting(false)
@@ -207,6 +219,21 @@ export default function GroupDashboard() {
           {[1, 2, 3].map(i => (
             <div key={i} className="bg-white border border-gray-100 rounded-2xl h-20 animate-pulse" />
           ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (groupNotFound) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-sm p-8 text-center">
+          <p className="text-4xl mb-4">🔍</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Group not found</h2>
+          <p className="text-sm text-gray-500 mb-6">This group may have been deleted or the link is invalid.</p>
+          <Link to="/" className="inline-block bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition">
+            Back to Home
+          </Link>
         </div>
       </div>
     )
