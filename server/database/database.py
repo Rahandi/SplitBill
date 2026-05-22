@@ -29,14 +29,10 @@ class Database:
         passcode_hash VARCHAR(64) NULL
       )
     """)
-    cursor.execute("""
-      SELECT COUNT(*) FROM information_schema.COLUMNS
-      WHERE TABLE_SCHEMA = DATABASE()
-        AND TABLE_NAME = 'bills'
-        AND COLUMN_NAME = 'group_id'
-    """)
-    if cursor.fetchone()[0] == 0:
+    try:
       cursor.execute("ALTER TABLE bills ADD COLUMN group_id INT NULL")
+    except Exception:
+      pass  # Column already exists from a prior migration
     cursor.execute("""
       CREATE TABLE IF NOT EXISTS group_members (
         id INT AUTO_INCREMENT PRIMARY KEY,
