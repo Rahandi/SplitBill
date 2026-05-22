@@ -137,7 +137,7 @@ export default function NewBill() {
         targetCode = group.join_code
       }
       const passcode = sessionStorage.getItem(`group_passcode_${targetCode}`) || undefined
-      await submitGroupBill(targetCode, passcode ? { ...payload, passcode } : payload)
+      await submitGroupBill(targetCode, payload, passcode)
       navigate(`/group/${targetCode}`)
     } catch (err) {
       setError(err.message)

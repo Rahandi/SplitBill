@@ -3,3 +3,5 @@ mysql-connector-python
 pytesseract
 Pillow
 pytest
+bcrypt
+gunicorn

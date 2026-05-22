@@ -1,4 +1,4 @@
-from database.tables import BillsTable, ItemsTable, PersonsTable
+from database.tables import BillsTable, GroupsTable, ItemsTable, PersonsTable
 
 
 class BillController:
@@ -12,6 +12,10 @@ class BillController:
     bill_object['total'] = bill.total
     bill_object['settled'] = bill.settled
     bill_object['group_id'] = bill.group_id
+    if bill.group_id:
+      group = GroupsTable().get_by_id(bill.group_id)
+      if group:
+        bill_object['group_join_code'] = group.join_code
     bill_object['items'] = []
     items = ItemsTable().get_by_bill_id(bill.id)
     for item in items:

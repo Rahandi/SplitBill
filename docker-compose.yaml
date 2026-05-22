@@ -18,7 +18,6 @@ services:
     container_name: splitbill-server
     restart: unless-stopped
     environment:
-      - FLASK_ENV=development
       - DB_HOST=db
     ports:
       - "5000:5000"

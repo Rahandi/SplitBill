@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getBill, calculateBill, settleBill, addParticipant, removeParticipant } from '../api'
 
+function groupPasscode(joinCode) {
+  if (!joinCode) return undefined
+  return sessionStorage.getItem(`group_passcode_${joinCode}`) || undefined
+}
+
 export default function BillDetail() {
   const { id } = useParams()
   const [bill, setBill] = useState(null)
+  const [passcode, setPasscode] = useState(undefined)
   const [shares, setShares] = useState(null)
   const [payer, setPayer] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -12,17 +18,24 @@ export default function BillDetail() {
   const [newParticipant, setNewParticipant] = useState({})
   const [addingTo, setAddingTo] = useState(null)
 
-  async function loadBill() {
-    const data = await getBill(id)
+  async function loadBill(pc) {
+    const data = await getBill(id, pc)
     setBill(data)
     setLoading(false)
   }
 
-  useEffect(() => { loadBill() }, [id])
+  useEffect(() => {
+    getBill(id).then(data => {
+      const pc = groupPasscode(data.group_join_code)
+      setPasscode(pc)
+      setBill(data)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [id])
 
   async function handleCalculate() {
     try {
-      const result = await calculateBill(id)
+      const result = await calculateBill(id, passcode)
       setShares(result.shares)
       setPayer(result.payer)
       setError('')
@@ -33,7 +46,7 @@ export default function BillDetail() {
 
   async function handleSettle() {
     if (!window.confirm('Mark this bill as settled?')) return
-    const updated = await settleBill(id)
+    const updated = await settleBill(id, passcode)
     setBill(updated)
   }
 
@@ -42,17 +55,17 @@ export default function BillDetail() {
     if (!name) return
     setAddingTo(itemId)
     try {
-      await addParticipant(itemId, name)
+      await addParticipant(itemId, name, passcode)
       setNewParticipant((p) => ({ ...p, [itemId]: '' }))
-      await loadBill()
+      await loadBill(passcode)
     } finally {
       setAddingTo(null)
     }
   }
 
   async function handleRemoveParticipant(itemId, name) {
-    await removeParticipant(itemId, name)
-    await loadBill()
+    await removeParticipant(itemId, name, passcode)
+    await loadBill(passcode)
   }
 
   if (loading) return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-400">Loading…</div>
@@ -60,7 +73,12 @@ export default function BillDetail() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center gap-3 mb-6">
-        <Link to="/" className="text-gray-400 hover:text-gray-600 text-sm">← Back</Link>
+        <Link
+          to={bill?.group_join_code ? `/group/${bill.group_join_code}` : '/'}
+          className="text-gray-400 hover:text-gray-600 text-sm"
+        >
+          ← Back
+        </Link>
       </div>
 
       {/* Bill header */}

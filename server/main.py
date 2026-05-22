@@ -1,7 +1,7 @@
 import json
 
 from controllers import BillController, GroupController, ItemController
-from database.tables import BillsTable, GroupMembersTable, GroupsTable
+from database.tables import BillsTable, GroupMembersTable, GroupsTable, ItemsTable
 from controllers.receipt import parse_receipt
 from flask import Flask, request
 
@@ -15,6 +15,22 @@ def __success(data):
 
 def __error(message, code=400):
   return json.dumps({"status": "error", "error": message}), code
+
+def _passcode():
+  return request.headers.get('X-Group-Passcode')
+
+def _check_bill_auth(bill):
+  """Returns error tuple if bill belongs to a group that denies access, else None."""
+  if not bill.group_id:
+    return None
+  group = GroupsTable().get_by_id(bill.group_id)
+  if not group:
+    return None
+  try:
+    group_controller.check_access(group.join_code, _passcode())
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  return None
 
 @app.route('/')
 def home():
@@ -30,23 +46,29 @@ def stats():
 # Bill routes
 @app.route('/bill/submit', methods=['POST'])
 def bill_submit():
-  if request.method != 'POST':
-    return __error("Invalid request method", 405)
-  
   data = request.get_json()
   bill = bill_controller.create_bill(data)
-
   return __success(bill)
 
 @app.route('/bill/<bill_id>', methods=['GET'])
 def get_bill(bill_id):
-  result = bill_controller.get_bill(bill_id)
-  if not result:
+  bill_entity = BillsTable().get_by_id(bill_id)
+  if not bill_entity:
     return __error("Bill not found", 404)
+  err = _check_bill_auth(bill_entity)
+  if err:
+    return err
+  result = bill_controller.get_bill(bill_id)
   return __success(result)
 
 @app.route('/bill/<bill_id>/calculate', methods=['GET'])
 def calculate_bill(bill_id):
+  bill_entity = BillsTable().get_by_id(bill_id)
+  if not bill_entity:
+    return __error("Bill not found", 404)
+  err = _check_bill_auth(bill_entity)
+  if err:
+    return err
   result = bill_controller.calculate_single_bill(bill_id)
   if isinstance(result, str) and result.startswith("Error"):
     return __error(result, 400)
@@ -54,25 +76,14 @@ def calculate_bill(bill_id):
 
 @app.route('/bill/<bill_id>/settle', methods=['POST'])
 def settle_bill(bill_id):
-  result = bill_controller.settle_single_bill(bill_id)
-  if not result:
+  bill_entity = BillsTable().get_by_id(bill_id)
+  if not bill_entity:
     return __error("Bill not found", 404)
+  err = _check_bill_auth(bill_entity)
+  if err:
+    return err
+  result = bill_controller.settle_single_bill(bill_id)
   return __success(result)
-
-@app.route('/bills/unsettled', methods=['GET'])
-def get_unsettled_bills():
-  results = bill_controller.get_all_unsettled()
-  return __success(results)
-
-@app.route('/bills/calculate', methods=['GET'])
-def calculate_all_bills():
-  results = bill_controller.calculate_all_unsettled_bills()
-  return __success(results)
-
-@app.route('/bills/settle', methods=['POST'])
-def settle_all_bills():
-  results = bill_controller.settle_all_bills()
-  return __success(results)
 
 # Receipt routes
 @app.route('/receipt/parse', methods=['POST'])
@@ -89,8 +100,21 @@ def receipt_parse():
   return __success(result)
 
 # Item routes
+def _item_bill_auth(item_id):
+  """Looks up the bill for an item and checks group access. Returns error tuple or None."""
+  item_entity = ItemsTable().get_by_id(item_id)
+  if not item_entity:
+    return None
+  bill_entity = BillsTable().get_by_id(item_entity.bill_id)
+  if bill_entity:
+    return _check_bill_auth(bill_entity)
+  return None
+
 @app.route('/item/<item_id>', methods=['GET'])
 def get_item(item_id):
+  err = _item_bill_auth(item_id)
+  if err:
+    return err
   item = item_controller.get_item(item_id)
   if not item:
     return __error("Item not found", 404)
@@ -98,35 +122,31 @@ def get_item(item_id):
 
 @app.route('/item/<item_id>/add_participant', methods=['POST'])
 def add_participant(item_id):
-  if request.method != 'POST':
-    return __error("Invalid request method", 405)
-  
   data = request.get_json()
   participant_name = data.get('participant_name')
   if not participant_name:
     return __error("Participant name is required", 400)
-  
+  err = _item_bill_auth(item_id)
+  if err:
+    return err
   item = item_controller.add_participant(item_id, participant_name)
   if not item:
     return __error("Item not found", 404)
-  
   return __success(item)
 
 @app.route('/item/<item_id>/remove_participant', methods=['POST'])
 def remove_participant(item_id):
-  if request.method != 'POST':
-    return __error("Invalid request method", 405)
-
   data = request.get_json()
   participant_name = data.get('participant_name')
   if not participant_name:
     return __error("Participant name is required", 400)
-
-  item = item_controller.remove_participant(item_id, participant_name)
-  if not item:
+  err = _item_bill_auth(item_id)
+  if err:
+    return err
+  result = item_controller.remove_participant(item_id, participant_name)
+  if not result:
     return __error("Item not found", 404)
-
-  return __success(item)
+  return __success(result)
 
 # Group routes
 @app.route('/group/create', methods=['POST'])
@@ -141,9 +161,8 @@ def group_create():
 
 @app.route('/group/<code>', methods=['GET'])
 def get_group(code):
-  passcode = request.args.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -160,9 +179,8 @@ def verify_group(code):
 @app.route('/group/<code>/bill/submit', methods=['POST'])
 def group_bill_submit(code):
   data = request.get_json()
-  passcode = data.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -172,9 +190,8 @@ def group_bill_submit(code):
 
 @app.route('/group/<code>/bills/unsettled', methods=['GET'])
 def group_bills_unsettled(code):
-  passcode = request.args.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -184,9 +201,8 @@ def group_bills_unsettled(code):
 
 @app.route('/group/<code>/bills/calculate', methods=['GET'])
 def group_bills_calculate(code):
-  passcode = request.args.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -196,10 +212,8 @@ def group_bills_calculate(code):
 
 @app.route('/group/<code>/bills/settle', methods=['POST'])
 def group_bills_settle(code):
-  data = request.get_json() or {}
-  passcode = data.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -210,9 +224,8 @@ def group_bills_settle(code):
 # Group member routes
 @app.route('/group/<code>/members', methods=['GET'])
 def group_members_list(code):
-  passcode = request.args.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -223,9 +236,8 @@ def group_members_list(code):
 @app.route('/group/<code>/members', methods=['POST'])
 def group_members_add(code):
   data = request.get_json() or {}
-  passcode = data.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -241,9 +253,8 @@ def group_members_add(code):
 
 @app.route('/group/<code>/members/<name>', methods=['DELETE'])
 def group_members_remove(code, name):
-  passcode = request.args.get('passcode')
   try:
-    group = group_controller.check_access(code, passcode)
+    group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
@@ -253,4 +264,4 @@ def group_members_remove(code, name):
   return __success(members)
 
 if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=5000, debug=True)
+  app.run(host='0.0.0.0', port=5000, debug=False)

@@ -1,11 +1,20 @@
 import hashlib
 import secrets
 
+import bcrypt
+
 from database.tables import GroupsTable
 
 
 def _hash(passcode):
-  return hashlib.sha256(passcode.encode()).hexdigest()
+  return bcrypt.hashpw(passcode.encode(), bcrypt.gensalt()).decode()
+
+
+def _verify(passcode, stored_hash):
+  if stored_hash.startswith('$2b$') or stored_hash.startswith('$2a$'):
+    return bcrypt.checkpw(passcode.encode(), stored_hash.encode())
+  # Legacy SHA-256 hash — accepts existing groups until their passcode is reset
+  return hashlib.sha256(passcode.encode()).hexdigest() == stored_hash
 
 
 class GroupController:
@@ -27,14 +36,14 @@ class GroupController:
       return False
     if group.passcode_hash is None:
       return True
-    return group.passcode_hash == _hash(passcode or '')
+    return _verify(passcode or '', group.passcode_hash)
 
   def check_access(self, join_code, passcode):
-    """Returns group entity dict, raises ValueError on wrong passcode, returns None if not found."""
+    """Returns group entity, raises ValueError on wrong passcode, returns None if not found."""
     group = GroupsTable().get_by_code(join_code)
     if not group:
       return None
     if group.passcode_hash is not None:
-      if not passcode or group.passcode_hash != _hash(passcode):
+      if not passcode or not _verify(passcode, group.passcode_hash):
         raise ValueError("Invalid passcode")
     return group

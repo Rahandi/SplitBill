@@ -7,6 +7,16 @@ class GroupsTable:
     self.db = Database().get_db()
     self.cursor = self.db.cursor()
 
+  def get_by_id(self, id):
+    self.cursor.execute(
+      "SELECT id, name, join_code, passcode_hash FROM `groups` WHERE id = %s",
+      (id,)
+    )
+    result = self.cursor.fetchone()
+    if result:
+      return GroupEntity(id=result[0], name=result[1], join_code=result[2], passcode_hash=result[3])
+    return None
+
   def get_by_code(self, join_code):
     self.cursor.execute(
       "SELECT id, name, join_code, passcode_hash FROM `groups` WHERE join_code = %s",
