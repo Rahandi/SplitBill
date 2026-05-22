@@ -22,6 +22,7 @@ class GroupMembersTable:
       self.db.commit()
       return True
     except Exception:
+      self.db.rollback()
       return False
 
   def remove(self, group_id, name):

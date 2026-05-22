@@ -233,7 +233,9 @@ def group_members_add(code):
   name = (data.get('name') or '').strip()
   if not name:
     return __error("Name is required", 400)
-  GroupMembersTable().add(group.id, name)
+  ok = GroupMembersTable().add(group.id, name)
+  if not ok:
+    return __error(f"Could not add '{name}' — may already exist", 409)
   members = GroupMembersTable().get_by_group_id(group.id)
   return __success(members)
 

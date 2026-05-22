@@ -46,6 +46,7 @@ export default function GroupDashboard() {
   // Member input
   const [memberInput, setMemberInput] = useState('')
   const [addingMember, setAddingMember] = useState(false)
+  const [memberError, setMemberError] = useState(null)
 
   // Passcode gate
   const [needsPasscode, setNeedsPasscode] = useState(false)
@@ -127,18 +128,26 @@ export default function GroupDashboard() {
     const name = memberInput.trim()
     if (!name) return
     setAddingMember(true)
+    setMemberError(null)
     try {
       const updated = await addGroupMember(code, name, passcode())
       setMembers(updated)
       setMemberInput('')
+    } catch (err) {
+      setMemberError(err.message)
     } finally {
       setAddingMember(false)
     }
   }
 
   async function handleRemoveMember(name) {
-    const updated = await removeGroupMember(code, name, passcode())
-    setMembers(updated)
+    setMemberError(null)
+    try {
+      const updated = await removeGroupMember(code, name, passcode())
+      setMembers(updated)
+    } catch (err) {
+      setMemberError(err.message)
+    }
   }
 
   async function handleSettleAll() {
@@ -260,6 +269,10 @@ export default function GroupDashboard() {
                 </span>
               ))}
             </div>
+          )}
+
+          {memberError && (
+            <p className="text-xs text-red-500 mb-2">{memberError}</p>
           )}
 
           {/* Add member */}
