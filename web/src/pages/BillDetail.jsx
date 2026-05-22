@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { getBill, calculateBill, settleBill, addParticipant, removeParticipant } from '../api'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { getBill, calculateBill, settleBill, deleteBill, addParticipant, removeParticipant } from '../api'
 
 function groupPasscode(joinCode) {
   if (!joinCode) return undefined
@@ -9,11 +9,14 @@ function groupPasscode(joinCode) {
 
 export default function BillDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [bill, setBill] = useState(null)
   const [passcode, setPasscode] = useState(undefined)
   const [shares, setShares] = useState(null)
   const [payer, setPayer] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [settling, setSettling] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const [newParticipant, setNewParticipant] = useState({})
   const [addingTo, setAddingTo] = useState(null)
@@ -46,8 +49,24 @@ export default function BillDetail() {
 
   async function handleSettle() {
     if (!window.confirm('Mark this bill as settled?')) return
-    const updated = await settleBill(id, passcode)
-    setBill(updated)
+    setSettling(true)
+    try {
+      const updated = await settleBill(id, passcode)
+      setBill(updated)
+    } finally {
+      setSettling(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Delete "${bill.name}"? This cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      await deleteBill(id, passcode)
+      navigate(bill?.group_join_code ? `/group/${bill.group_join_code}` : '/')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   async function handleAddParticipant(itemId) {
@@ -108,9 +127,17 @@ export default function BillDetail() {
             </button>
             <button
               onClick={handleSettle}
-              className="flex-1 border border-green-300 text-green-600 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition"
+              disabled={settling}
+              className="flex-1 border border-green-300 text-green-600 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition disabled:opacity-50"
             >
-              Mark Settled
+              {settling ? 'Settling…' : 'Mark Settled'}
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="border border-red-200 text-red-400 py-2 px-3 rounded-lg text-sm font-medium hover:bg-red-50 transition disabled:opacity-50"
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
             </button>
           </div>
         )}
@@ -138,6 +165,9 @@ export default function BillDetail() {
       {/* Items */}
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Items</h2>
+        {bill.items.length === 0 ? (
+          <p className="text-sm text-gray-400">No items in this bill.</p>
+        ) : null}
         <div className="flex flex-col gap-3">
           {bill.items.map((item) => (
             <div key={item.id} className="border border-gray-200 rounded-xl p-4">

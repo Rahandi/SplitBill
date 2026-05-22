@@ -33,6 +33,19 @@ class BillsTable:
       )
     return [self._row_to_entity(r) for r in self.cursor.fetchall()]
 
+  def get_settled(self, group_id=None):
+    if group_id is not None:
+      self.cursor.execute(
+        "SELECT id, name, total, payer_id, settled, group_id FROM bills WHERE settled = %s AND group_id = %s",
+        (True, group_id)
+      )
+    else:
+      self.cursor.execute(
+        "SELECT id, name, total, payer_id, settled, group_id FROM bills WHERE settled = %s",
+        (True,)
+      )
+    return [self._row_to_entity(r) for r in self.cursor.fetchall()]
+
   def count(self):
     self.cursor.execute("SELECT COUNT(*) FROM bills")
     return self.cursor.fetchone()[0]

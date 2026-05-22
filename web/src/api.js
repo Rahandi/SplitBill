@@ -22,7 +22,8 @@ export const getStats = () => request('GET', '/stats')
 
 export const getBill = (id, passcode) =>
   request('GET', `/bill/${id}`, null, passcodeHeader(passcode))
-export const submitBill = (data) => request('POST', '/bill/submit', data)
+export const deleteBill = (id, passcode) =>
+  request('DELETE', `/bill/${id}`, null, passcodeHeader(passcode))
 export const calculateBill = (id, passcode) =>
   request('GET', `/bill/${id}/calculate`, null, passcodeHeader(passcode))
 export const settleBill = (id, passcode) =>
@@ -39,12 +40,16 @@ export const addGroupMember = (code, name, passcode) =>
 export const removeGroupMember = (code, name, passcode) =>
   request('DELETE', `/group/${code}/members/${encodeURIComponent(name)}`, null, passcodeHeader(passcode))
 export const createGroup = (data) => request('POST', '/group/create', data)
+export const deleteGroup = (code, passcode) =>
+  request('DELETE', `/group/${code}`, null, passcodeHeader(passcode))
 export const getGroup = (code, passcode) =>
   request('GET', `/group/${code}`, null, passcodeHeader(passcode))
 export const verifyGroupPasscode = (code, passcode) =>
   request('POST', `/group/${code}/verify`, { passcode })
 export const getGroupUnsettledBills = (code, passcode) =>
   request('GET', `/group/${code}/bills/unsettled`, null, passcodeHeader(passcode))
+export const getGroupSettledBills = (code, passcode) =>
+  request('GET', `/group/${code}/bills/settled`, null, passcodeHeader(passcode))
 export const calculateGroupBills = (code, passcode) =>
   request('GET', `/group/${code}/bills/calculate`, null, passcodeHeader(passcode))
 export const settleGroupBills = (code, passcode) =>

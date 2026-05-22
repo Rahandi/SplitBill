@@ -71,6 +71,8 @@ class BillController:
         person_totals[pid] += split_price
 
     item_total = sum(item.price for item in items)
+    if item_total == 0:
+      return "Error: all items have zero price"
     for pid in person_totals:
       person_totals[pid] = person_totals[pid] * (bill.total / item_total)
 
@@ -86,13 +88,18 @@ class BillController:
 
     return result
 
+  def get_all_settled(self, group_id=None):
+    return [self.get_bill(bill.id) for bill in BillsTable().get_settled(group_id=group_id)]
+
   def calculate_all_unsettled_bills(self, group_id=None):
     bills = BillsTable().get_unsettled(group_id=group_id)
     debt_map = {}
+    errors = []
 
     for bill in bills:
       result = self.calculate_single_bill(bill.id)
       if isinstance(result, str) and result.startswith("Error"):
+        errors.append(result)
         continue
 
       payer = result['payer']['name']
@@ -132,7 +139,7 @@ class BillController:
           if not debt_map[debtor]:
             del debt_map[debtor]
 
-    return debt_map
+    return {"debts": debt_map, "errors": errors}
 
   def settle_single_bill(self, bill_id):
     bill = BillsTable().get_by_id(bill_id)

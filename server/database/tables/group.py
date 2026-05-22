@@ -31,6 +31,26 @@ class GroupsTable:
     self.cursor.execute("SELECT COUNT(*) FROM `groups`")
     return self.cursor.fetchone()[0]
 
+  def delete(self, join_code):
+    group = self.get_by_code(join_code)
+    if not group:
+      return False
+    self.cursor.execute("""
+      DELETE ip FROM item_person ip
+      INNER JOIN items i ON ip.item_id = i.id
+      INNER JOIN bills b ON i.bill_id = b.id
+      WHERE b.group_id = %s
+    """, (group.id,))
+    self.cursor.execute(
+      "DELETE i FROM items i INNER JOIN bills b ON i.bill_id = b.id WHERE b.group_id = %s",
+      (group.id,)
+    )
+    self.cursor.execute("DELETE FROM bills WHERE group_id = %s", (group.id,))
+    self.cursor.execute("DELETE FROM group_members WHERE group_id = %s", (group.id,))
+    self.cursor.execute("DELETE FROM `groups` WHERE id = %s", (group.id,))
+    self.db.commit()
+    return True
+
   def create(self, name, join_code, passcode_hash=None):
     self.cursor.execute(
       "INSERT INTO `groups` (name, join_code, passcode_hash) VALUES (%s, %s, %s)",

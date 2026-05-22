@@ -4,8 +4,10 @@ import {
   getGroup,
   verifyGroupPasscode,
   getGroupUnsettledBills,
+  getGroupSettledBills,
   calculateGroupBills,
   settleGroupBills,
+  deleteGroup,
   getGroupMembers,
   addGroupMember,
   removeGroupMember,
@@ -41,7 +43,12 @@ export default function GroupDashboard() {
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [settling, setSettling] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [settledBills, setSettledBills] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const [calcErrors, setCalcErrors] = useState([])
 
   // Member input
   const [memberInput, setMemberInput] = useState('')
@@ -72,13 +79,15 @@ export default function GroupDashboard() {
       const g = await getGroup(code, passcode())
       setGroup(g)
       saveToRecent(g)
-      const [billList, debtMap, memberList] = await Promise.all([
+      const [billList, calcResult, memberList] = await Promise.all([
         getGroupUnsettledBills(code, passcode()),
         calculateGroupBills(code, passcode()),
         getGroupMembers(code, passcode()),
       ])
       setBills(billList)
       setMembers(memberList)
+      const debtMap = calcResult.debts || {}
+      setCalcErrors(calcResult.errors || [])
       const rows = []
       for (const [debtor, creditors] of Object.entries(debtMap)) {
         for (const [creditor, amount] of Object.entries(creditors)) {
@@ -151,11 +160,38 @@ export default function GroupDashboard() {
   }
 
   async function handleSettleAll() {
-    if (!window.confirm('Settle all bills in this group?')) return
+    const msg = `Settle ${bills.length} bill${bills.length !== 1 ? 's' : ''}?\n${bills.map(b => `• ${b.name}`).join('\n')}`
+    if (!window.confirm(msg)) return
     setSettling(true)
     await settleGroupBills(code, passcode())
     await load()
     setSettling(false)
+  }
+
+  async function handleDeleteGroup() {
+    if (!window.confirm(`Delete group "${group?.name}"? This will delete all bills and cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      await deleteGroup(code, passcode())
+      navigate('/')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  async function handleToggleHistory() {
+    if (showHistory) {
+      setShowHistory(false)
+      return
+    }
+    setLoadingHistory(true)
+    setShowHistory(true)
+    try {
+      const settled = await getGroupSettledBills(code, passcode())
+      setSettledBills(settled)
+    } finally {
+      setLoadingHistory(false)
+    }
   }
 
   function copyLink() {
@@ -320,6 +356,13 @@ export default function GroupDashboard() {
           </section>
         )}
 
+        {/* Calculation errors (bills with missing participants) */}
+        {calcErrors.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-4 py-3 text-xs text-yellow-700">
+            {calcErrors.map((e, i) => <p key={i}>{e}</p>)}
+          </div>
+        )}
+
         {/* Unsettled Bills */}
         <section>
           <div className="flex items-center justify-between mb-3">
@@ -368,6 +411,59 @@ export default function GroupDashboard() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Settled Bill History */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">History</h2>
+            <button
+              onClick={handleToggleHistory}
+              className="text-xs font-medium text-indigo-500 hover:text-indigo-700 transition"
+            >
+              {showHistory ? 'Hide' : 'Show settled bills'}
+            </button>
+          </div>
+          {showHistory && (
+            loadingHistory ? (
+              <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center text-sm text-gray-400">Loading…</div>
+            ) : settledBills.length === 0 ? (
+              <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center text-sm text-gray-400">No settled bills yet.</div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {settledBills.map((bill) => (
+                  <Link
+                    key={bill.id}
+                    to={`/bill/${bill.id}`}
+                    className="block bg-white border border-gray-100 rounded-2xl p-4 hover:border-gray-300 transition opacity-60 group"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-700 truncate">{bill.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-400 capitalize">{bill.payer.name}</span>
+                          <span className="text-gray-300 text-xs">·</span>
+                          <span className="text-xs text-green-600 font-medium">Settled</span>
+                        </div>
+                      </div>
+                      <span className="text-base font-bold text-gray-500 shrink-0">{bill.total.toLocaleString()}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )
+          )}
+        </section>
+
+        {/* Danger zone */}
+        <section className="border-t border-gray-100 pt-4">
+          <button
+            onClick={handleDeleteGroup}
+            disabled={deleting}
+            className="text-xs text-red-400 hover:text-red-600 disabled:opacity-40 transition font-medium"
+          >
+            {deleting ? 'Deleting group…' : 'Delete this group'}
+          </button>
         </section>
       </main>
     </div>

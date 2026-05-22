@@ -19,6 +19,12 @@ def __error(message, code=400):
 def _passcode():
   return request.headers.get('X-Group-Passcode')
 
+def _int_id(val):
+  try:
+    return int(val)
+  except (TypeError, ValueError):
+    return None
+
 def _check_bill_auth(bill):
   """Returns error tuple if bill belongs to a group that denies access, else None."""
   if not bill.group_id:
@@ -44,46 +50,63 @@ def stats():
   })
 
 # Bill routes
-@app.route('/bill/submit', methods=['POST'])
-def bill_submit():
-  data = request.get_json()
-  bill = bill_controller.create_bill(data)
-  return __success(bill)
-
 @app.route('/bill/<bill_id>', methods=['GET'])
 def get_bill(bill_id):
-  bill_entity = BillsTable().get_by_id(bill_id)
+  bid = _int_id(bill_id)
+  if bid is None:
+    return __error("Invalid bill ID", 400)
+  bill_entity = BillsTable().get_by_id(bid)
   if not bill_entity:
     return __error("Bill not found", 404)
   err = _check_bill_auth(bill_entity)
   if err:
     return err
-  result = bill_controller.get_bill(bill_id)
+  result = bill_controller.get_bill(bid)
   return __success(result)
 
 @app.route('/bill/<bill_id>/calculate', methods=['GET'])
 def calculate_bill(bill_id):
-  bill_entity = BillsTable().get_by_id(bill_id)
+  bid = _int_id(bill_id)
+  if bid is None:
+    return __error("Invalid bill ID", 400)
+  bill_entity = BillsTable().get_by_id(bid)
   if not bill_entity:
     return __error("Bill not found", 404)
   err = _check_bill_auth(bill_entity)
   if err:
     return err
-  result = bill_controller.calculate_single_bill(bill_id)
+  result = bill_controller.calculate_single_bill(bid)
   if isinstance(result, str) and result.startswith("Error"):
     return __error(result, 400)
   return __success(result)
 
 @app.route('/bill/<bill_id>/settle', methods=['POST'])
 def settle_bill(bill_id):
-  bill_entity = BillsTable().get_by_id(bill_id)
+  bid = _int_id(bill_id)
+  if bid is None:
+    return __error("Invalid bill ID", 400)
+  bill_entity = BillsTable().get_by_id(bid)
   if not bill_entity:
     return __error("Bill not found", 404)
   err = _check_bill_auth(bill_entity)
   if err:
     return err
-  result = bill_controller.settle_single_bill(bill_id)
+  result = bill_controller.settle_single_bill(bid)
   return __success(result)
+
+@app.route('/bill/<bill_id>', methods=['DELETE'])
+def delete_bill(bill_id):
+  bid = _int_id(bill_id)
+  if bid is None:
+    return __error("Invalid bill ID", 400)
+  bill_entity = BillsTable().get_by_id(bid)
+  if not bill_entity:
+    return __error("Bill not found", 404)
+  err = _check_bill_auth(bill_entity)
+  if err:
+    return err
+  BillsTable().delete(bid)
+  return __success(None)
 
 # Receipt routes
 @app.route('/receipt/parse', methods=['POST'])
@@ -112,38 +135,47 @@ def _item_bill_auth(item_id):
 
 @app.route('/item/<item_id>', methods=['GET'])
 def get_item(item_id):
-  err = _item_bill_auth(item_id)
+  iid = _int_id(item_id)
+  if iid is None:
+    return __error("Invalid item ID", 400)
+  err = _item_bill_auth(iid)
   if err:
     return err
-  item = item_controller.get_item(item_id)
+  item = item_controller.get_item(iid)
   if not item:
     return __error("Item not found", 404)
   return __success(item)
 
 @app.route('/item/<item_id>/add_participant', methods=['POST'])
 def add_participant(item_id):
-  data = request.get_json()
+  iid = _int_id(item_id)
+  if iid is None:
+    return __error("Invalid item ID", 400)
+  data = request.get_json(force=True) or {}
   participant_name = data.get('participant_name')
   if not participant_name:
     return __error("Participant name is required", 400)
-  err = _item_bill_auth(item_id)
+  err = _item_bill_auth(iid)
   if err:
     return err
-  item = item_controller.add_participant(item_id, participant_name)
+  item = item_controller.add_participant(iid, participant_name)
   if not item:
     return __error("Item not found", 404)
   return __success(item)
 
 @app.route('/item/<item_id>/remove_participant', methods=['POST'])
 def remove_participant(item_id):
-  data = request.get_json()
+  iid = _int_id(item_id)
+  if iid is None:
+    return __error("Invalid item ID", 400)
+  data = request.get_json(force=True) or {}
   participant_name = data.get('participant_name')
   if not participant_name:
     return __error("Participant name is required", 400)
-  err = _item_bill_auth(item_id)
+  err = _item_bill_auth(iid)
   if err:
     return err
-  result = item_controller.remove_participant(item_id, participant_name)
+  result = item_controller.remove_participant(iid, participant_name)
   if not result:
     return __error("Item not found", 404)
   return __success(result)
@@ -151,7 +183,7 @@ def remove_participant(item_id):
 # Group routes
 @app.route('/group/create', methods=['POST'])
 def group_create():
-  data = request.get_json()
+  data = request.get_json(force=True) or {}
   name = data.get('name')
   if not name:
     return __error("Group name is required", 400)
@@ -176,15 +208,38 @@ def verify_group(code):
   valid = group_controller.verify_passcode(code, passcode)
   return __success({'valid': valid})
 
-@app.route('/group/<code>/bill/submit', methods=['POST'])
-def group_bill_submit(code):
-  data = request.get_json()
+@app.route('/group/<code>', methods=['DELETE'])
+def delete_group(code):
   try:
     group = group_controller.check_access(code, _passcode())
   except ValueError:
     return __error("Invalid passcode", 403)
   if not group:
     return __error("Group not found", 404)
+  GroupsTable().delete(code)
+  return __success(None)
+
+@app.route('/group/<code>/bill/submit', methods=['POST'])
+def group_bill_submit(code):
+  data = request.get_json(force=True) or {}
+  try:
+    group = group_controller.check_access(code, _passcode())
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  name = (data.get('name') or '').strip()
+  total = data.get('total')
+  payer_name = (data.get('payer_name') or '').strip()
+  items = data.get('items')
+  if not name:
+    return __error("Bill name is required", 400)
+  if total is None:
+    return __error("Total is required", 400)
+  if not payer_name:
+    return __error("Payer name is required", 400)
+  if items is None:
+    return __error("Items are required", 400)
   bill = bill_controller.create_bill(data, group_id=group.id)
   return __success(bill)
 
@@ -197,6 +252,17 @@ def group_bills_unsettled(code):
   if not group:
     return __error("Group not found", 404)
   results = bill_controller.get_all_unsettled(group_id=group.id)
+  return __success(results)
+
+@app.route('/group/<code>/bills/settled', methods=['GET'])
+def group_bills_settled(code):
+  try:
+    group = group_controller.check_access(code, _passcode())
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  results = bill_controller.get_all_settled(group_id=group.id)
   return __success(results)
 
 @app.route('/group/<code>/bills/calculate', methods=['GET'])

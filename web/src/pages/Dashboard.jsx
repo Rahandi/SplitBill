@@ -13,11 +13,13 @@ function getRecentGroups() {
 export default function Dashboard() {
   const navigate = useNavigate()
   const [joinCode, setJoinCode] = useState('')
-  const [stats, setStats] = useState(null)
+  const [stats, setStats] = useState({ total_groups: '—', total_bills: '—' })
   const recentGroups = getRecentGroups()
 
   useEffect(() => {
-    getStats().then(setStats).catch(() => {})
+    getStats().then(setStats).catch(() => {
+      setStats({ total_groups: '—', total_bills: '—' })
+    })
   }, [])
 
   function handleJoin(e) {
@@ -67,7 +69,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats */}
-        {stats && (
+        {true && (
           <div className="grid grid-cols-2 gap-3 mb-8">
             <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-4">
               <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
@@ -76,7 +78,7 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-extrabold text-gray-900">{stats.total_groups.toLocaleString()}</p>
+                <p className="text-2xl font-extrabold text-gray-900">{typeof stats.total_groups === 'number' ? stats.total_groups.toLocaleString() : stats.total_groups}</p>
                 <p className="text-xs text-gray-400 font-medium mt-0.5">Total Groups</p>
               </div>
             </div>
@@ -87,7 +89,7 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-extrabold text-gray-900">{stats.total_bills.toLocaleString()}</p>
+                <p className="text-2xl font-extrabold text-gray-900">{typeof stats.total_bills === 'number' ? stats.total_bills.toLocaleString() : stats.total_bills}</p>
                 <p className="text-xs text-gray-400 font-medium mt-0.5">Total Bills</p>
               </div>
             </div>
