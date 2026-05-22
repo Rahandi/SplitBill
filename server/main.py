@@ -1,10 +1,13 @@
 import json
 
-from controllers import BillController, ItemController
+from controllers import BillController, GroupController, ItemController
+from database.tables import BillsTable, GroupsTable
+from controllers.receipt import parse_receipt
 from flask import Flask, request
 
 app = Flask(__name__)
 bill_controller = BillController()
+group_controller = GroupController()
 item_controller = ItemController()
 
 def __success(data):
@@ -16,6 +19,13 @@ def __error(message, code=400):
 @app.route('/')
 def home():
   return __success("Server is running")
+
+@app.route('/stats', methods=['GET'])
+def stats():
+  return __success({
+    'total_groups': GroupsTable().count(),
+    'total_bills': BillsTable().count(),
+  })
 
 # Bill routes
 @app.route('/bill/submit', methods=['POST'])
@@ -59,10 +69,24 @@ def calculate_all_bills():
   results = bill_controller.calculate_all_unsettled_bills()
   return __success(results)
 
-@app.route('/bills/settle', methods=['GET'])
+@app.route('/bills/settle', methods=['POST'])
 def settle_all_bills():
   results = bill_controller.settle_all_bills()
   return __success(results)
+
+# Receipt routes
+@app.route('/receipt/parse', methods=['POST'])
+def receipt_parse():
+  if 'image' not in request.files:
+    return __error("No image file provided", 400)
+  image_bytes = request.files['image'].read()
+  if not image_bytes:
+    return __error("Empty image file", 400)
+  try:
+    result = parse_receipt(image_bytes)
+  except Exception as e:
+    return __error(f"OCR failed: {str(e)}", 500)
+  return __success(result)
 
 # Item routes
 @app.route('/item/<item_id>', methods=['GET'])
@@ -103,6 +127,85 @@ def remove_participant(item_id):
     return __error("Item not found", 404)
 
   return __success(item)
+
+# Group routes
+@app.route('/group/create', methods=['POST'])
+def group_create():
+  data = request.get_json()
+  name = data.get('name')
+  if not name:
+    return __error("Group name is required", 400)
+  passcode = data.get('passcode')
+  group = group_controller.create_group(name, passcode=passcode)
+  return __success(group)
+
+@app.route('/group/<code>', methods=['GET'])
+def get_group(code):
+  passcode = request.args.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  return __success(group.to_dict())
+
+@app.route('/group/<code>/verify', methods=['POST'])
+def verify_group(code):
+  data = request.get_json() or {}
+  passcode = data.get('passcode', '')
+  valid = group_controller.verify_passcode(code, passcode)
+  return __success({'valid': valid})
+
+@app.route('/group/<code>/bill/submit', methods=['POST'])
+def group_bill_submit(code):
+  data = request.get_json()
+  passcode = data.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  bill = bill_controller.create_bill(data, group_id=group.id)
+  return __success(bill)
+
+@app.route('/group/<code>/bills/unsettled', methods=['GET'])
+def group_bills_unsettled(code):
+  passcode = request.args.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  results = bill_controller.get_all_unsettled(group_id=group.id)
+  return __success(results)
+
+@app.route('/group/<code>/bills/calculate', methods=['GET'])
+def group_bills_calculate(code):
+  passcode = request.args.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  results = bill_controller.calculate_all_unsettled_bills(group_id=group.id)
+  return __success(results)
+
+@app.route('/group/<code>/bills/settle', methods=['POST'])
+def group_bills_settle(code):
+  data = request.get_json() or {}
+  passcode = data.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  results = bill_controller.settle_all_bills(group_id=group.id)
+  return __success(results)
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=5000, debug=True)

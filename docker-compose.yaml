@@ -24,13 +24,12 @@ services:
       - "5000:5000"
     depends_on:
       - db
-  
-  discord:
-    build: ./discord
-    container_name: splitbill-discord
+
+  web:
+    build: ./web
+    container_name: splitbill-web
     restart: unless-stopped
-    environment:
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+    ports:
+      - "8080:80"
     depends_on:
       - server
-  

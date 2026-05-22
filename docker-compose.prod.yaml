@@ -1,0 +1,51 @@
+services:
+  db:
+    image: mysql:9.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-splitbill}
+      MYSQL_USER: ${DB_USER:-splitbill}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  server:
+    image: ghcr.io/rahandi/splitbill-server:latest
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-splitbill}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-splitbill}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/rahandi/splitbill-web:latest
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    depends_on:
+      - server
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_POLL_INTERVAL: 300
+      WATCHTOWER_CLEANUP: true
+      REPO_USER: ${GHCR_USER}
+      REPO_PASS: ${GHCR_TOKEN}
+      DOCKER_API_VERSION: "1.41"
+
+volumes:
+  db_data:

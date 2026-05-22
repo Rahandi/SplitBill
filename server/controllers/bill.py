@@ -11,6 +11,7 @@ class BillController:
     bill_object['name'] = bill.name
     bill_object['total'] = bill.total
     bill_object['settled'] = bill.settled
+    bill_object['group_id'] = bill.group_id
     bill_object['items'] = []
     items = ItemsTable().get_by_bill_id(bill.id)
     for item in items:
@@ -25,17 +26,17 @@ class BillController:
     bill_object['payer'] = PersonsTable().get_by_id(bill.payer_id).to_dict()
     return bill_object
 
-  def get_all_unsettled(self):
-    return [self.get_bill(bill.id) for bill in BillsTable().get_unsettled()]
+  def get_all_unsettled(self, group_id=None):
+    return [self.get_bill(bill.id) for bill in BillsTable().get_unsettled(group_id=group_id)]
 
-  def create_bill(self, data):
+  def create_bill(self, data, group_id=None):
     bill_name = data['name']
     items = data['items']
     total = data['total']
     payer_name = data['payer_name'].lower()
 
     payer = PersonsTable().get_by_name_or_create(payer_name)
-    bill = BillsTable().create(bill_name, total, payer.id)
+    bill = BillsTable().create(bill_name, total, payer.id, group_id=group_id)
     for item in items:
       item_name = item['name']
       item_price = item['price']
@@ -64,7 +65,7 @@ class BillController:
         if pid not in person_totals:
           person_totals[pid] = 0
         person_totals[pid] += split_price
-    
+
     item_total = sum(item.price for item in items)
     for pid in person_totals:
       person_totals[pid] = person_totals[pid] * (bill.total / item_total)
@@ -81,59 +82,52 @@ class BillController:
 
     return result
 
-  def calculate_all_unsettled_bills(self):
-    bills = BillsTable().get_unsettled()
-    debt_map = {}  # person -> {to_whom -> amount}
-    
-    # Calculate raw debts from all bills
+  def calculate_all_unsettled_bills(self, group_id=None):
+    bills = BillsTable().get_unsettled(group_id=group_id)
+    debt_map = {}
+
     for bill in bills:
       result = self.calculate_single_bill(bill.id)
       if isinstance(result, str) and result.startswith("Error"):
         continue
-        
+
       payer = result['payer']['name']
       for share in result['shares']:
         debtor = share['name']
         amount = share['amount']
-        
+
         if debtor == payer:
           continue
-          
-        # Initialize nested dictionaries if needed
+
         if debtor not in debt_map:
           debt_map[debtor] = {}
         if payer not in debt_map[debtor]:
           debt_map[debtor][payer] = 0
-          
+
         debt_map[debtor][payer] += amount
-    
-    # Simplify debts by canceling out mutual debts
+
     for debtor in list(debt_map.keys()):
       for creditor in list(debt_map.get(debtor, {}).keys()):
-        # Check if there's a reverse debt (creditor owes debtor)
         if creditor in debt_map and debtor in debt_map[creditor]:
-          # Get amounts owed in both directions
           debt_amount = debt_map[debtor][creditor]
           reverse_amount = debt_map[creditor][debtor]
-          
-          # Cancel out the smaller debt against the larger one
+
           if debt_amount >= reverse_amount:
             debt_map[debtor][creditor] -= reverse_amount
             del debt_map[creditor][debtor]
-            if not debt_map[creditor]:  # Remove empty dictionary
+            if not debt_map[creditor]:
               del debt_map[creditor]
           else:
             debt_map[creditor][debtor] -= debt_amount
             del debt_map[debtor][creditor]
-            if not debt_map[debtor]:  # Remove empty dictionary
+            if not debt_map[debtor]:
               del debt_map[debtor]
-              
-        # Remove zero debts
+
         if debtor in debt_map and creditor in debt_map.get(debtor, {}) and debt_map[debtor][creditor] == 0:
           del debt_map[debtor][creditor]
           if not debt_map[debtor]:
             del debt_map[debtor]
-    
+
     return debt_map
 
   def settle_single_bill(self, bill_id):
@@ -144,8 +138,8 @@ class BillController:
     BillsTable().update(bill)
     return self.get_bill(bill.id)
 
-  def settle_all_bills(self):
-    bills = BillsTable().get_unsettled()
+  def settle_all_bills(self, group_id=None):
+    bills = BillsTable().get_unsettled(group_id=group_id)
     settled_bills = []
     for bill in bills:
       bill.settled = True
