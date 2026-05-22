@@ -49,4 +49,13 @@ class Database:
     cursor.close()
 
   def get_db(self):
+    try:
+      self.db.ping(reconnect=True, attempts=3, delay=1)
+    except Exception:
+      self.db = mysql.connector.connect(
+        host=os.getenv("DB_HOST", "0.0.0.0"),
+        user=os.getenv("DB_USER", "splitbill"),
+        password=os.getenv("DB_PASSWORD", "splitbill"),
+        database=os.getenv("DB_NAME", "splitbill")
+      )
     return self.db
