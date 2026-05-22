@@ -1,7 +1,7 @@
 import json
 
 from controllers import BillController, GroupController, ItemController
-from database.tables import BillsTable, GroupsTable
+from database.tables import BillsTable, GroupMembersTable, GroupsTable
 from controllers.receipt import parse_receipt
 from flask import Flask, request
 
@@ -206,6 +206,49 @@ def group_bills_settle(code):
     return __error("Group not found", 404)
   results = bill_controller.settle_all_bills(group_id=group.id)
   return __success(results)
+
+# Group member routes
+@app.route('/group/<code>/members', methods=['GET'])
+def group_members_list(code):
+  passcode = request.args.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  members = GroupMembersTable().get_by_group_id(group.id)
+  return __success(members)
+
+@app.route('/group/<code>/members', methods=['POST'])
+def group_members_add(code):
+  data = request.get_json() or {}
+  passcode = data.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  name = (data.get('name') or '').strip()
+  if not name:
+    return __error("Name is required", 400)
+  GroupMembersTable().add(group.id, name)
+  members = GroupMembersTable().get_by_group_id(group.id)
+  return __success(members)
+
+@app.route('/group/<code>/members/<name>', methods=['DELETE'])
+def group_members_remove(code, name):
+  passcode = request.args.get('passcode')
+  try:
+    group = group_controller.check_access(code, passcode)
+  except ValueError:
+    return __error("Invalid passcode", 403)
+  if not group:
+    return __error("Group not found", 404)
+  GroupMembersTable().remove(group.id, name)
+  members = GroupMembersTable().get_by_group_id(group.id)
+  return __success(members)
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=5000, debug=True)

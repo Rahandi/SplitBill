@@ -37,6 +37,14 @@ class Database:
     """)
     if cursor.fetchone()[0] == 0:
       cursor.execute("ALTER TABLE bills ADD COLUMN group_id INT NULL")
+    cursor.execute("""
+      CREATE TABLE IF NOT EXISTS group_members (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        group_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        UNIQUE KEY uq_group_member (group_id, name)
+      )
+    """)
     db.commit()
     cursor.close()
 

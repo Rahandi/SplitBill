@@ -24,6 +24,12 @@ export const addParticipant = (itemId, name) =>
 export const removeParticipant = (itemId, name) =>
   request('POST', `/item/${itemId}/remove_participant`, { participant_name: name })
 
+export const getGroupMembers = (code, passcode) =>
+  request('GET', `/group/${code}/members${passcode ? `?passcode=${encodeURIComponent(passcode)}` : ''}`)
+export const addGroupMember = (code, name, passcode) =>
+  request('POST', `/group/${code}/members`, passcode ? { name, passcode } : { name })
+export const removeGroupMember = (code, name, passcode) =>
+  request('DELETE', `/group/${code}/members/${encodeURIComponent(name)}${passcode ? `?passcode=${encodeURIComponent(passcode)}` : ''}`)
 export const createGroup = (data) => request('POST', '/group/create', data)
 export const getGroup = (code, passcode) =>
   request('GET', `/group/${code}${passcode ? `?passcode=${encodeURIComponent(passcode)}` : ''}`)
