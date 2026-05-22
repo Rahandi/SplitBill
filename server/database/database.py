@@ -22,6 +22,13 @@ class Database:
   def _migrate(db):
     cursor = db.cursor()
     cursor.execute("""
+      CREATE TABLE IF NOT EXISTS persons (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        bank_account VARCHAR(255) NULL
+      )
+    """)
+    cursor.execute("""
       CREATE TABLE IF NOT EXISTS `groups` (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -29,10 +36,31 @@ class Database:
         passcode_hash VARCHAR(64) NULL
       )
     """)
-    try:
-      cursor.execute("ALTER TABLE bills ADD COLUMN group_id INT NULL")
-    except Exception:
-      pass  # Column already exists from a prior migration
+    cursor.execute("""
+      CREATE TABLE IF NOT EXISTS bills (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        total INT NOT NULL,
+        payer_id INT NOT NULL,
+        settled BOOLEAN NOT NULL DEFAULT FALSE,
+        group_id INT NULL
+      )
+    """)
+    cursor.execute("""
+      CREATE TABLE IF NOT EXISTS items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        bill_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        price INT NOT NULL
+      )
+    """)
+    cursor.execute("""
+      CREATE TABLE IF NOT EXISTS item_person (
+        item_id INT NOT NULL,
+        person_id INT NOT NULL,
+        PRIMARY KEY (item_id, person_id)
+      )
+    """)
     cursor.execute("""
       CREATE TABLE IF NOT EXISTS group_members (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,6 +69,10 @@ class Database:
         UNIQUE KEY uq_group_member (group_id, name)
       )
     """)
+    try:
+      cursor.execute("ALTER TABLE bills ADD COLUMN group_id INT NULL")
+    except Exception:
+      pass  # Column already exists
     db.commit()
     cursor.close()
 
