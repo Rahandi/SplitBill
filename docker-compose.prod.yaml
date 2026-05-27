@@ -17,6 +17,8 @@ services:
       - "8082:80"
     depends_on:
       - server
+    networks:
+      - central-db
 
   watchtower:
     image: containrrr/watchtower

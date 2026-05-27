@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getStats } from '../api'
+import { getStats, getGroup } from '../api'
 
 function getRecentGroups() {
   try {
@@ -14,11 +14,28 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [joinCode, setJoinCode] = useState('')
   const [stats, setStats] = useState({ total_groups: '—', total_bills: '—' })
-  const recentGroups = getRecentGroups()
+  const [recentGroups, setRecentGroups] = useState(getRecentGroups)
 
   useEffect(() => {
     getStats().then(setStats).catch(() => {
       setStats({ total_groups: '—', total_bills: '—' })
+    })
+
+    const stored = getRecentGroups()
+    if (stored.length === 0) return
+    Promise.all(
+      stored.map(g =>
+        getGroup(g.code).then(() => g).catch(err => {
+          if (err.message === 'Group not found') return null
+          return g // passcode-protected or network error — keep it
+        })
+      )
+    ).then(results => {
+      const valid = results.filter(Boolean)
+      if (valid.length !== stored.length) {
+        localStorage.setItem('recent_groups', JSON.stringify(valid))
+        setRecentGroups(valid)
+      }
     })
   }, [])
 
