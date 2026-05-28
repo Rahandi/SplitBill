@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { getBill, calculateBill, settleBill, deleteBill, addParticipant, removeParticipant } from '../api'
 
 function groupPasscode(joinCode) {
@@ -10,7 +10,9 @@ function groupPasscode(joinCode) {
 export default function BillDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [bill, setBill] = useState(null)
+  const [notFound, setNotFound] = useState(false)
   const [passcode, setPasscode] = useState(undefined)
   const [shares, setShares] = useState(null)
   const [payer, setPayer] = useState(null)
@@ -28,12 +30,23 @@ export default function BillDetail() {
   }
 
   useEffect(() => {
-    getBill(id).then(data => {
-      const pc = groupPasscode(data.group_join_code)
-      setPasscode(pc)
+    // Use group code passed via navigation state to look up passcode upfront,
+    // so passcode-protected group bills load on the first try.
+    const groupCode = location.state?.groupCode
+    const pc = groupPasscode(groupCode)
+    setPasscode(pc)
+    getBill(id, pc).then(data => {
+      // If we didn't have the group code in state, derive passcode from response
+      if (!pc && data.group_join_code) {
+        const derived = groupPasscode(data.group_join_code)
+        setPasscode(derived)
+      }
       setBill(data)
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch(() => {
+      setNotFound(true)
+      setLoading(false)
+    })
   }, [id])
 
   async function handleCalculate() {
@@ -88,6 +101,14 @@ export default function BillDetail() {
   }
 
   if (loading) return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-400">Loading…</div>
+
+  if (notFound || !bill) return (
+    <div className="max-w-2xl mx-auto px-4 py-8 text-center">
+      <p className="text-4xl mb-4">🔍</p>
+      <p className="text-gray-500 text-sm">Bill not found or access denied.</p>
+      <Link to="/" className="mt-4 inline-block text-indigo-600 text-sm hover:underline">← Back to home</Link>
+    </div>
+  )
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

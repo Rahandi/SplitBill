@@ -420,6 +420,7 @@ export default function GroupDashboard() {
                 <Link
                   key={bill.id}
                   to={`/bill/${bill.id}`}
+                  state={{ groupCode: code }}
                   className="block bg-white border border-gray-100 rounded-2xl p-4 hover:border-indigo-200 hover:shadow-sm transition group"
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -462,6 +463,7 @@ export default function GroupDashboard() {
                   <Link
                     key={bill.id}
                     to={`/bill/${bill.id}`}
+                    state={{ groupCode: code }}
                     className="block bg-white border border-gray-100 rounded-2xl p-4 hover:border-gray-300 transition opacity-60 group"
                   >
                     <div className="flex items-center justify-between gap-4">
