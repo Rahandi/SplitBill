@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-import { getBill, calculateBill, settleBill, deleteBill, addParticipant, removeParticipant } from '../api'
+import { getBill, calculateBill, settleBill, deleteBill, addParticipant, removeParticipant, getGroupMembers } from '../api'
 
 function groupPasscode(joinCode) {
   if (!joinCode) return undefined
@@ -20,6 +20,7 @@ export default function BillDetail() {
   const [settling, setSettling] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
+  const [members, setMembers] = useState([])
   const [newParticipant, setNewParticipant] = useState({})
   const [addingTo, setAddingTo] = useState(null)
 
@@ -30,19 +31,20 @@ export default function BillDetail() {
   }
 
   useEffect(() => {
-    // Use group code passed via navigation state to look up passcode upfront,
-    // so passcode-protected group bills load on the first try.
     const groupCode = location.state?.groupCode
     const pc = groupPasscode(groupCode)
     setPasscode(pc)
     getBill(id, pc).then(data => {
-      // If we didn't have the group code in state, derive passcode from response
       if (!pc && data.group_join_code) {
         const derived = groupPasscode(data.group_join_code)
         setPasscode(derived)
       }
       setBill(data)
       setLoading(false)
+      if (data.group_join_code) {
+        const effectivePc = pc || groupPasscode(data.group_join_code)
+        getGroupMembers(data.group_join_code, effectivePc).then(setMembers).catch(() => {})
+      }
     }).catch(() => {
       setNotFound(true)
       setLoading(false)
@@ -82,13 +84,13 @@ export default function BillDetail() {
     }
   }
 
-  async function handleAddParticipant(itemId) {
-    const name = (newParticipant[itemId] || '').trim()
+  async function handleAddParticipant(itemId, nameArg) {
+    const name = nameArg ?? (newParticipant[itemId] || '').trim()
     if (!name) return
     setAddingTo(itemId)
     try {
       await addParticipant(itemId, name, passcode)
-      setNewParticipant((p) => ({ ...p, [itemId]: '' }))
+      if (!nameArg) setNewParticipant((p) => ({ ...p, [itemId]: '' }))
       await loadBill(passcode)
     } finally {
       setAddingTo(null)
@@ -221,7 +223,27 @@ export default function BillDetail() {
                   ))
                 )}
               </div>
-              {!bill.settled && (
+              {!bill.settled && members.length > 0 ? (
+                (() => {
+                  const assigned = new Set(item.participants.map(p => p.name))
+                  const unassigned = members.filter(m => !assigned.has(m))
+                  return unassigned.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {unassigned.map(name => (
+                        <button
+                          key={name}
+                          type="button"
+                          disabled={addingTo === item.id}
+                          onClick={() => handleAddParticipant(item.id, name)}
+                          className="px-3 py-1 rounded-full text-xs font-medium capitalize transition bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300 disabled:opacity-40"
+                        >
+                          + {name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null
+                })()
+              ) : !bill.settled && (
                 <div className="flex gap-2">
                   <input
                     value={newParticipant[item.id] || ''}
