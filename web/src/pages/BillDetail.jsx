@@ -22,12 +22,15 @@ export default function BillDetail() {
   const [error, setError] = useState('')
   const [members, setMembers] = useState([])
   const [newParticipant, setNewParticipant] = useState({})
-  const [addingTo, setAddingTo] = useState(null)
 
   async function loadBill(pc) {
     const data = await getBill(id, pc)
     setBill(data)
     setLoading(false)
+  }
+
+  function syncBill() {
+    getBill(id, passcode).then(setBill).catch(() => {})
   }
 
   useEffect(() => {
@@ -87,19 +90,51 @@ export default function BillDetail() {
   async function handleAddParticipant(itemId, nameArg) {
     const name = nameArg ?? (newParticipant[itemId] || '').trim()
     if (!name) return
-    setAddingTo(itemId)
+
+    // Optimistic: add immediately so the UI responds without waiting
+    setBill(prev => ({
+      ...prev,
+      items: prev.items.map(item =>
+        item.id === itemId
+          ? { ...item, participants: [...item.participants, { id: `_tmp_${name}`, name }] }
+          : item
+      ),
+    }))
+    if (!nameArg) setNewParticipant(p => ({ ...p, [itemId]: '' }))
+
     try {
       await addParticipant(itemId, name, passcode)
-      if (!nameArg) setNewParticipant((p) => ({ ...p, [itemId]: '' }))
-      await loadBill(passcode)
-    } finally {
-      setAddingTo(null)
+      syncBill() // background sync to replace temp ID with real one
+    } catch (err) {
+      // Revert optimistic update on failure
+      setBill(prev => ({
+        ...prev,
+        items: prev.items.map(item =>
+          item.id === itemId
+            ? { ...item, participants: item.participants.filter(p => p.id !== `_tmp_${name}`) }
+            : item
+        ),
+      }))
+      setError(err.message || 'Failed to add participant')
     }
   }
 
   async function handleRemoveParticipant(itemId, name) {
-    await removeParticipant(itemId, name, passcode)
-    await loadBill(passcode)
+    // Optimistic: remove immediately
+    setBill(prev => ({
+      ...prev,
+      items: prev.items.map(item =>
+        item.id === itemId
+          ? { ...item, participants: item.participants.filter(p => p.name !== name) }
+          : item
+      ),
+    }))
+
+    try {
+      await removeParticipant(itemId, name, passcode)
+    } catch {
+      syncBill() // revert by reloading on failure
+    }
   }
 
   if (loading) return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-400">Loading…</div>
@@ -233,9 +268,8 @@ export default function BillDetail() {
                         <button
                           key={name}
                           type="button"
-                          disabled={addingTo === item.id}
                           onClick={() => handleAddParticipant(item.id, name)}
-                          className="px-3 py-1 rounded-full text-xs font-medium capitalize transition bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300 disabled:opacity-40"
+                          className="px-3 py-1 rounded-full text-xs font-medium capitalize transition bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300"
                         >
                           + {name}
                         </button>
@@ -254,8 +288,7 @@ export default function BillDetail() {
                   />
                   <button
                     onClick={() => handleAddParticipant(item.id)}
-                    disabled={addingTo === item.id}
-                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-2 disabled:opacity-40"
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 px-2"
                   >
                     Add
                   </button>
