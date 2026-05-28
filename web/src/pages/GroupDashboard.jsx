@@ -214,10 +214,10 @@ export default function GroupDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white border border-gray-100 rounded-2xl h-20 animate-pulse" />
+            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl h-20 animate-pulse" />
           ))}
         </div>
       </div>
@@ -226,11 +226,11 @@ export default function GroupDashboard() {
 
   if (groupNotFound) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-sm p-8 text-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 w-full max-w-sm p-8 text-center">
           <p className="text-4xl mb-4">🔍</p>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Group not found</h2>
-          <p className="text-sm text-gray-500 mb-6">This group may have been deleted or the link is invalid.</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Group not found</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">This group may have been deleted or the link is invalid.</p>
           <Link to="/" className="inline-block bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition">
             Back to Home
           </Link>
@@ -241,12 +241,12 @@ export default function GroupDashboard() {
 
   if (needsPasscode) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-sm p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Enter Passcode</h2>
-          <p className="text-sm text-gray-500 mb-5">This group is protected. Enter the passcode to continue.</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 w-full max-w-sm p-8">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Enter Passcode</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">This group is protected. Enter the passcode to continue.</p>
           {passcodeError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{passcodeError}</div>
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">{passcodeError}</div>
           )}
           <form onSubmit={handlePasscodeSubmit} className="space-y-4">
             <input
@@ -256,7 +256,7 @@ export default function GroupDashboard() {
               placeholder="Passcode"
               autoFocus
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
             <button
               type="submit"
@@ -272,17 +272,17 @@ export default function GroupDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <Link to="/" className="text-gray-400 hover:text-gray-600 shrink-0">
+            <Link to="/" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 className="font-bold text-gray-900 truncate">{group?.name}</h1>
+            <h1 className="font-bold text-gray-900 dark:text-white truncate">{group?.name}</h1>
           </div>
           <button
             onClick={() => navigate(`/group/${code}/bill/new`)}
@@ -295,30 +295,29 @@ export default function GroupDashboard() {
 
       <main className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-6">
         {/* Share link */}
-        <div className="flex items-center gap-2 p-3 bg-white border border-gray-100 rounded-2xl">
-          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl">
+          <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
-          <span className="text-xs text-gray-500 truncate flex-1">{window.location.href}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{window.location.href}</span>
           <button
             onClick={copyLink}
-            className="text-xs bg-gray-100 hover:bg-gray-200 rounded-lg px-2.5 py-1 transition whitespace-nowrap font-medium"
+            className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg px-2.5 py-1 transition whitespace-nowrap font-medium"
           >
             {copied ? 'Copied!' : 'Copy link'}
           </button>
         </div>
 
         {/* Members */}
-        <section className="bg-white border border-gray-100 rounded-2xl p-5">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Members</h2>
+        <section className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Members</h2>
 
-          {/* Existing members */}
           {members.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {members.map(name => (
                 <span
                   key={name}
-                  className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-sm font-medium px-3 py-1.5 rounded-full"
+                  className="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium px-3 py-1.5 rounded-full"
                 >
                   <Avatar name={name} />
                   <span className="capitalize">{name}</span>
@@ -338,54 +337,52 @@ export default function GroupDashboard() {
             <p className="text-xs text-red-500 mb-2">{memberError}</p>
           )}
 
-          {/* Add member */}
           <form onSubmit={handleAddMember} className="flex gap-2">
             <input
               value={memberInput}
               onChange={e => setMemberInput(e.target.value)}
               placeholder="Add a name…"
-              className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="flex-1 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
             <button
               type="submit"
               disabled={addingMember || !memberInput.trim()}
-              className="bg-indigo-600 disabled:bg-indigo-200 text-white text-sm font-medium px-4 py-2 rounded-xl transition"
+              className="bg-indigo-600 disabled:bg-indigo-200 dark:disabled:bg-indigo-900 text-white text-sm font-medium px-4 py-2 rounded-xl transition"
             >
               Add
             </button>
           </form>
 
           {members.length === 0 && (
-            <p className="text-xs text-gray-400 mt-3">Add names to quickly assign participants when splitting bills.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">Add names to quickly assign participants when splitting bills.</p>
           )}
         </section>
 
         {/* Who Owes Who */}
         {debts.length > 0 && (
           <section>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Who Owes Who</h2>
+            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Who Owes Who</h2>
             <div className="flex flex-col gap-2">
               {debts.map((d, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-2xl px-4 py-3 flex items-center justify-between">
+                <div key={i} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Avatar name={d.debtor} />
-                    <span className="text-sm font-semibold text-gray-900 capitalize truncate">{d.debtor}</span>
-                    <svg className="w-3 h-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize truncate">{d.debtor}</span>
+                    <svg className="w-3 h-3 text-gray-300 dark:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                     <Avatar name={d.creditor} />
-                    <span className="text-sm font-semibold text-gray-900 capitalize truncate">{d.creditor}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize truncate">{d.creditor}</span>
                   </div>
-                  <span className="text-sm font-bold text-indigo-600 shrink-0 ml-3">{d.amount.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 shrink-0 ml-3">{d.amount.toLocaleString()}</span>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        {/* Calculation errors (bills with missing participants) */}
         {calcErrors.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-4 py-3 text-xs text-yellow-700">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl px-4 py-3 text-xs text-yellow-700 dark:text-yellow-400">
             {calcErrors.map((e, i) => <p key={i}>{e}</p>)}
           </div>
         )}
@@ -393,7 +390,7 @@ export default function GroupDashboard() {
         {/* Unsettled Bills */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Unsettled Bills</h2>
+            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Unsettled Bills</h2>
             {bills.length > 0 && (
               <button
                 onClick={handleSettleAll}
@@ -405,11 +402,11 @@ export default function GroupDashboard() {
             )}
           </div>
           {bills.length === 0 ? (
-            <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center">
-              <p className="text-gray-400 text-sm">No unsettled bills yet.</p>
+            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-8 text-center">
+              <p className="text-gray-400 dark:text-gray-500 text-sm">No unsettled bills yet.</p>
               <button
                 onClick={() => navigate(`/group/${code}/bill/new`)}
-                className="mt-3 text-indigo-600 text-sm font-medium hover:underline"
+                className="mt-3 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline"
               >
                 Add the first bill →
               </button>
@@ -421,19 +418,19 @@ export default function GroupDashboard() {
                   key={bill.id}
                   to={`/bill/${bill.id}`}
                   state={{ groupCode: code }}
-                  className="block bg-white border border-gray-100 rounded-2xl p-4 hover:border-indigo-200 hover:shadow-sm transition group"
+                  className="block bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-sm transition group"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate group-hover:text-indigo-700 transition">{bill.name}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition">{bill.name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Avatar name={bill.payer.name} />
-                        <span className="text-xs text-gray-500 capitalize">{bill.payer.name}</span>
-                        <span className="text-gray-300 text-xs">·</span>
-                        <span className="text-xs text-gray-400">{bill.items.length} item{bill.items.length !== 1 ? 's' : ''}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{bill.payer.name}</span>
+                        <span className="text-gray-300 dark:text-gray-600 text-xs">·</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">{bill.items.length} item{bill.items.length !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
-                    <span className="text-lg font-bold text-gray-900 shrink-0">{bill.total.toLocaleString()}</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white shrink-0">{bill.total.toLocaleString()}</span>
                   </div>
                 </Link>
               ))}
@@ -444,19 +441,19 @@ export default function GroupDashboard() {
         {/* Settled Bill History */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">History</h2>
+            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">History</h2>
             <button
               onClick={handleToggleHistory}
-              className="text-xs font-medium text-indigo-500 hover:text-indigo-700 transition"
+              className="text-xs font-medium text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition"
             >
               {showHistory ? 'Hide' : 'Show settled bills'}
             </button>
           </div>
           {showHistory && (
             loadingHistory ? (
-              <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center text-sm text-gray-400">Loading…</div>
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-center text-sm text-gray-400 dark:text-gray-500">Loading…</div>
             ) : settledBills.length === 0 ? (
-              <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center text-sm text-gray-400">No settled bills yet.</div>
+              <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-center text-sm text-gray-400 dark:text-gray-500">No settled bills yet.</div>
             ) : (
               <div className="flex flex-col gap-2">
                 {settledBills.map((bill) => (
@@ -464,18 +461,18 @@ export default function GroupDashboard() {
                     key={bill.id}
                     to={`/bill/${bill.id}`}
                     state={{ groupCode: code }}
-                    className="block bg-white border border-gray-100 rounded-2xl p-4 hover:border-gray-300 transition opacity-60 group"
+                    className="block bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 hover:border-gray-300 dark:hover:border-gray-600 transition opacity-60 group"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-700 truncate">{bill.name}</p>
+                        <p className="font-semibold text-gray-700 dark:text-gray-300 truncate">{bill.name}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-gray-400 capitalize">{bill.payer.name}</span>
-                          <span className="text-gray-300 text-xs">·</span>
-                          <span className="text-xs text-green-600 font-medium">Settled</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 capitalize">{bill.payer.name}</span>
+                          <span className="text-gray-300 dark:text-gray-600 text-xs">·</span>
+                          <span className="text-xs text-green-600 dark:text-green-400 font-medium">Settled</span>
                         </div>
                       </div>
-                      <span className="text-base font-bold text-gray-500 shrink-0">{bill.total.toLocaleString()}</span>
+                      <span className="text-base font-bold text-gray-500 dark:text-gray-400 shrink-0">{bill.total.toLocaleString()}</span>
                     </div>
                   </Link>
                 ))}
@@ -485,7 +482,7 @@ export default function GroupDashboard() {
         </section>
 
         {/* Danger zone */}
-        <section className="border-t border-gray-100 pt-4">
+        <section className="border-t border-gray-100 dark:border-gray-700 pt-4">
           <button
             onClick={handleDeleteGroup}
             disabled={deleting}

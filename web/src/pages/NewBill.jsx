@@ -26,7 +26,7 @@ function MemberChips({ members, selected, onChange }) {
             className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition ${
               on
                 ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             {name}
@@ -48,7 +48,7 @@ function PayerChips({ members, value, onChange }) {
           className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition ${
             value === name
               ? 'bg-indigo-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
           }`}
         >
           {name}
@@ -148,24 +148,24 @@ export default function NewBill() {
   const useChips = members.length > 0
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link
             to={groupCode ? `/group/${groupCode}` : '/'}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="font-bold text-gray-900">New Bill</h1>
+          <h1 className="font-bold text-gray-900 dark:text-white">New Bill</h1>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
         {/* Receipt scanner */}
-        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-5 mb-5 text-center bg-white">
+        <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-5 mb-5 text-center bg-white dark:bg-gray-800">
           <input
             ref={fileInputRef}
             type="file"
@@ -194,30 +194,30 @@ export default function NewBill() {
               type="button"
               onClick={() => fileInputRef.current.click()}
               disabled={scanning}
-              className="flex flex-col items-center gap-2 w-full text-gray-400 hover:text-indigo-500 transition disabled:opacity-40"
+              className="flex flex-col items-center gap-2 w-full text-gray-400 dark:text-gray-500 hover:text-indigo-500 transition disabled:opacity-40"
             >
               <span className="text-3xl">📷</span>
               <span className="text-sm font-medium">Scan Receipt</span>
-              <span className="text-xs text-gray-400">Upload a photo to auto-fill items and total</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">Upload a photo to auto-fill items and total</span>
             </button>
           )}
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Bill info */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bill Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bill Name</label>
               <input
                 required
                 value={billName}
                 onChange={e => setBillName(e.target.value)}
                 placeholder="e.g. Dinner at Sate Khas Senayan"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Total</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total</label>
               <input
                 required
                 type="number"
@@ -225,7 +225,7 @@ export default function NewBill() {
                 value={total}
                 onChange={e => setTotal(e.target.value)}
                 placeholder="e.g. 250000"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
             <div>
@@ -238,7 +238,7 @@ export default function NewBill() {
                   value={payerName}
                   onChange={e => setPayerName(e.target.value)}
                   placeholder="e.g. Rahandi"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               )}
               {/* hidden required field guard when using chips */}
@@ -257,7 +257,7 @@ export default function NewBill() {
           {/* Items */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-700">Items</h2>
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Items</h2>
               <button
                 type="button"
                 onClick={addItem}
@@ -268,20 +268,20 @@ export default function NewBill() {
             </div>
             <div className="flex flex-col gap-3">
               {items.map((item, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-3">
+                <div key={i} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 flex flex-col gap-3">
                   <div className="flex gap-3 items-end">
                     <div className="flex-1">
-                      <label className="block text-xs text-gray-500 mb-1">Item Name</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Item Name</label>
                       <input
                         required
                         value={item.name}
                         onChange={e => updateItem(i, 'name', e.target.value)}
                         placeholder="e.g. Sate Ayam"
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       />
                     </div>
                     <div className="w-28">
-                      <label className="block text-xs text-gray-500 mb-1">Price</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Price</label>
                       <input
                         required
                         type="number"
@@ -289,7 +289,7 @@ export default function NewBill() {
                         value={item.price}
                         onChange={e => updateItem(i, 'price', e.target.value)}
                         placeholder="45000"
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       />
                     </div>
                     {items.length > 1 && (
@@ -316,7 +316,7 @@ export default function NewBill() {
                         value={item.participants}
                         onChange={e => updateItem(i, 'participants', e.target.value)}
                         placeholder="e.g. Rahandi, Alvian, Dimas"
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       />
                     )}
                   </div>

@@ -74,6 +74,8 @@ jobs:
 
       - name: Build frontend
         working-directory: ./web
+        env:
+          VITE_GIT_COMMIT: ${{ github.sha }}
         run: |
           npm ci
           npm run build

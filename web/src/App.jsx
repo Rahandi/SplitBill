@@ -4,6 +4,7 @@ import NewBill from './pages/NewBill'
 import BillDetail from './pages/BillDetail'
 import CreateGroup from './pages/CreateGroup'
 import GroupDashboard from './pages/GroupDashboard'
+import ThemeToggle from './components/ThemeToggle'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/group/:code" element={<GroupDashboard />} />
         <Route path="/group/:code/bill/new" element={<NewBill />} />
       </Routes>
+      <ThemeToggle />
     </BrowserRouter>
   )
 }
